@@ -5,7 +5,7 @@ stack_name = "wholesale-rakhi"
 resolve_s3 = true
 s3_prefix = "wholesale-rakhi"
 region = "us-east-1"
-capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+capabilities = "CAPABILITY_IAM"
 confirm_changeset = false
 fail_on_empty_changeset = false
 parameter_overrides = "AllowedOrigin=https://rb.us"

@@ -80,8 +80,7 @@ jobs:
             --stack-name wholesale-rakhi \
             --region "${AWS_REGION}" \
             --resolve-s3 \
-            --capabilities "CAPABILITY_IAM" \
-            --capabilities "CAPABILITY_AUTO_EXPAND" \
+            --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
             --parameter-overrides $PARAMS
