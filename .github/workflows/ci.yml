@@ -10,6 +10,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  AWS_REGION: us-east-1
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -50,7 +53,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - uses: aws-actions/setup-sam@v2
         with:
@@ -58,26 +61,35 @@ jobs:
 
       - name: SAM build
         working-directory: amplify/backend
-        run: sam build --cached --parallel
+        run: sam build
 
       - name: SAM deploy
         working-directory: amplify/backend
+        env:
+          SES_NOTIFY_EMAIL: ${{ secrets.SES_NOTIFY_EMAIL }}
+          SES_FROM_EMAIL: ${{ secrets.SES_FROM_EMAIL }}
         run: |
+          PARAMS="AllowedOrigin=https://rb.us"
+          if [ -n "$SES_NOTIFY_EMAIL" ]; then
+            PARAMS="$PARAMS NotifyEmail=${SES_NOTIFY_EMAIL}"
+          fi
+          if [ -n "$SES_FROM_EMAIL" ]; then
+            PARAMS="$PARAMS FromEmail=${SES_FROM_EMAIL}"
+          fi
           sam deploy \
             --stack-name wholesale-rakhi \
+            --region "${AWS_REGION}" \
             --resolve-s3 \
-            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+            --capabilities "CAPABILITY_IAM" \
+            --capabilities "CAPABILITY_AUTO_EXPAND" \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
-            --no-progressbar \
-            --parameter-overrides \
-              AllowedOrigin=https://rb.us \
-              NotifyEmail="${{ secrets.SES_NOTIFY_EMAIL }}" \
-              FromEmail="${{ secrets.SES_FROM_EMAIL }}"
+            --parameter-overrides $PARAMS
 
       - name: Print stack outputs
         run: |
           aws cloudformation describe-stacks \
+            --region "${AWS_REGION}" \
             --stack-name wholesale-rakhi \
             --query "Stacks[0].Outputs" \
             --output table
