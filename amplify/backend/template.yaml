@@ -126,8 +126,12 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref WholesaleLeads
-        - SESCrudPolicy:
-            IdentityName: "*"
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource: "*"
       Environment:
         Variables:
           LEADS_TABLE: !Ref WholesaleLeads

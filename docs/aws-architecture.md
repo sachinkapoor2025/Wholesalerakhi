@@ -59,12 +59,15 @@ Amplify compute role needs:
 
 Never embed access keys in frontend code or `NEXT_PUBLIC_*` variables.
 
-## SAM deploy (optional)
+## GitHub Actions
 
-```bash
-cd amplify/backend
-sam build
-sam deploy --guided
-```
+| Job | When | What |
+| --- | --- | --- |
+| `build` | Every push / PR | Lint, typecheck, test, Next.js build |
+| `deploy-infra` | Push to `main` after `build` passes | `sam deploy` of `amplify/backend/template.yaml` using GitHub Secrets |
 
-Then copy API URL, user pool id and client id into Amplify environment variables.
+Required secrets: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Optional: `AWS_REGION`, `AWS_SESSION_TOKEN`, `SES_NOTIFY_EMAIL`, `SES_FROM_EMAIL`.
+
+Stack name: `wholesale-rakhi`. Outputs (`ApiUrl`, `UserPoolId`, `UserPoolClientId`) are printed in the job log for Amplify env vars.
+
+Website hosting is still AWS Amplify (connect the GitHub repo in the Amplify console). This workflow deploys DynamoDB, Cognito, Lambda and API Gateway only.

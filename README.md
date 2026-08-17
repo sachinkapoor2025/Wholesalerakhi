@@ -63,7 +63,21 @@ See [docs/aws-architecture.md](docs/aws-architecture.md).
 
 ## GitHub Actions
 
-`.github/workflows/ci.yml` runs lint, typecheck, tests and production build. The job fails if any step fails. Do not store AWS secrets in source.
+`.github/workflows/ci.yml` runs lint, typecheck, tests and production build on every push and pull request.
+
+On **push to `main`** (after CI passes), it also deploys AWS infra with SAM using GitHub Secrets:
+
+- `AWS_ACCESS_KEY_ID` (required)
+- `AWS_SECRET_ACCESS_KEY` (required)
+- `AWS_REGION` (optional, defaults to `us-east-1`)
+- `AWS_SESSION_TOKEN` (optional, only for temporary keys)
+- `SES_NOTIFY_EMAIL` / `SES_FROM_EMAIL` (optional lead-notification addresses)
+
+The deploy job creates/updates CloudFormation stack `wholesale-rakhi`: DynamoDB tables, Cognito admin pool, Lambda, API Gateway.
+
+The Next.js website itself is still hosted by **AWS Amplify Hosting** once that app is connected to this repo. Infra deploy ≠ website hosting.
+
+Never put AWS keys in source code.
 
 ## Admin
 
