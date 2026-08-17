@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground: #2c1810;
+  --background: #faf7f2;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+:focus-visible {
+  outline: 2px solid #7b1e2d;
+  outline-offset: 3px;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-maroon px-6 py-3 text-sm font-semibold text-white shadow-card transition hover:bg-maroon-dark;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-maroon/20 bg-white px-6 py-3 text-sm font-semibold text-maroon transition hover:border-maroon hover:bg-cream;
+  }
+  .section-title {
+    @apply font-serif text-3xl font-semibold tracking-tight text-ink md:text-4xl;
+  }
+  .prose-page p {
+    @apply mb-4 text-base leading-7 text-ink-muted;
+  }
+  .prose-page h2 {
+    @apply mb-3 mt-10 font-serif text-2xl font-semibold text-ink;
+  }
+  .prose-page h3 {
+    @apply mb-2 mt-8 font-serif text-xl font-semibold text-ink;
+  }
+  .prose-page ul,
+  .prose-page ol {
+    @apply mb-4 ml-5 space-y-2 text-ink-muted;
+  }
+  .prose-page ul {
+    @apply list-disc;
+  }
+  .prose-page ol {
+    @apply list-decimal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

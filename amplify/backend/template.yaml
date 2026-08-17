@@ -1,0 +1,169 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Wholesale Rakhi (RB.us) leads, banners, Cognito and optional SES.
+
+Parameters:
+  NotifyEmail:
+    Type: String
+    Default: ""
+  FromEmail:
+    Type: String
+    Default: ""
+  AllowedOrigin:
+    Type: String
+    Default: "https://rb.us"
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+
+Resources:
+  WholesaleLeads:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: WholesaleLeads
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: leadId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: leadId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: email-index
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  SeasonalBanners:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: SeasonalBanners
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: bannerId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: bannerId
+          KeyType: HASH
+
+  WholesaleProducts:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: WholesaleProducts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: sku
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sku
+          KeyType: HASH
+
+  WholesaleCategories:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: WholesaleCategories
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: slug
+          KeyType: HASH
+
+  WholesaleSettings:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: WholesaleSettings
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  AdminUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: wholesale-rakhi-admin
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+
+  AdminUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref AdminUserPool
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      PreventUserExistenceErrors: ENABLED
+      GenerateSecret: false
+
+  LeadsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../../lambda/leads/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WholesaleLeads
+        - SESCrudPolicy:
+            IdentityName: "*"
+      Environment:
+        Variables:
+          LEADS_TABLE: !Ref WholesaleLeads
+          SES_NOTIFY_EMAIL: !Ref NotifyEmail
+          SES_FROM_EMAIL: !Ref FromEmail
+          ALLOWED_ORIGIN: !Ref AllowedOrigin
+      Events:
+        Post:
+          Type: Api
+          Properties:
+            Path: /leads
+            Method: post
+
+  BannersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../../lambda/banners/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SeasonalBanners
+      Environment:
+        Variables:
+          BANNERS_TABLE: !Ref SeasonalBanners
+          ALLOWED_ORIGIN: !Ref AllowedOrigin
+      Events:
+        Get:
+          Type: Api
+          Properties:
+            Path: /banners
+            Method: get
+
+Outputs:
+  ApiUrl:
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  UserPoolId:
+    Value: !Ref AdminUserPool
+  UserPoolClientId:
+    Value: !Ref AdminUserPoolClient
